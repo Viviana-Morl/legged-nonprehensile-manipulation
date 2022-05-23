@@ -92,10 +92,12 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 
     toEigen(xobj)<<toEigen(xobj_lin),
 	               toEigen(obj_angle);
+     std::cout<<"obj"<<toEigen(xobj)<<std::endl;
 
 	 toEigen(CoM)<<toEigen(kinDynComp.getCenterOfMassPosition()),
 	               toEigen(base_angle);
 
+	std::cout<<"com"<<toEigen(CoM)<<std::endl;	   
 	//Compute velocity of the center of mass
 
     Eigen::Matrix<double,3,1> CoM_vel_lin=toEigen(kinDynComp.getCenterOfMassVelocity());
@@ -114,20 +116,24 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 	            toEigen(base_angle),
 	            eigenJointPos;
 
+    std::cout<<"qb "<<toEigen(qb)<<std::endl;
     // Compute position COM+joints
 	toEigen(q)<<toEigen(CoM),
 	            eigenJointPos;
 
+    std::cout<<"q "<<toEigen(q)<<std::endl;
 	// Compute velocity COM+joints
 
 	toEigen(dq)<<toEigen(CoM_vel),
 	             eigenJointVel;
 
+    std::cout<<"dq "<<toEigen(dq)<<std::endl;
 	// Compute velocity base+joints
 
 	toEigen(dqb)<<eigenBasevel,
 	             eigenJointVel;
 
+    std::cout<<"dqb "<<toEigen(dqb)<<std::endl;
 	// Joint limits
 
     toEigen(qmin)<<-1.256636, -1.75 , -1.75,-1.75,-1.75,-1.58, -2.62, -3.15, -0.02, -1.58, -2.62,   -3.15, -0.02, -0.74, -1.598, 0, -2.08,-0.52;
@@ -149,6 +155,7 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 	    
 	     toEigen(Bias)<<iDynTree::toEigen(bias_force.baseWrench()),
 	                   iDynTree::toEigen(bias_force.jointTorques());
+         std::cout<<"bias"<<toEigen(Bias)<<std::endl;
 	  //Compute Gravitational term
 	
 	     kinDynComp.generalizedGravityForces(grav_force);
@@ -185,11 +192,13 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 		 
       toEigen(MassMatrixCOM)=toEigen(T).transpose().inverse()*toEigen(MassMatrix)*toEigen(T).inverse();
 
+	  std::cout<<"MassMatrixCOM"<<toEigen(MassMatrixCOM)<<std::endl;
 
        Eigen::Matrix<double,6,6> M=toEigen(Jobj)*toEigen(MassMatrix).inverse()*toEigen(Jobj).transpose();
 	   toEigen(LambdaObj)=M.inverse();
 	  
 	   toEigen(BiasObj)=toEigen(LambdaObj)*toEigen(Jobj)*toEigen(MassMatrix).inverse()*toEigen(Bias)-toEigen(LambdaObj)*toEigen(Jobjdot)*toEigen(dqb);
+       std::cout<<"jobj"<<toEigen(Jobj)<<std::endl;
 
 
 
@@ -201,6 +210,7 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 	  // Compute Coriolis+gravitational term in CoM representation
 	
 	 toEigen(BiasCOM)=toEigen(T).transpose().inverse()*toEigen(Bias)+toEigen(T).transpose().inverse()*toEigen(MassMatrix)*toEigen(T_inv_dot)*toEigen(dq);
+         std::cout<<"biascom"<<toEigen(BiasObj)<<std::endl;
 	  // Compute gravitational term in CoM representation
 	
 	     toEigen(GravMatrixCOM)=toEigen(T).transpose().inverse()*toEigen(GravMatrix);
@@ -311,6 +321,9 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 
 		s_T_f = s_Fv_f.GetTwist();
         s_F_f = s_Fv_f.GetFrame();
+		std::cout<<"s_F_f"<<s_J_f.data<<std::endl;
+        std::cout<<"twist"<<linvel_obj<<std::endl;
+		std::cout<<"twist"<<s_T_f<<std::endl;
    
     b_J_ee_ = KDL::Jacobian(24);
     s_J_dot_ee_ = KDL::Jacobian(24);
@@ -344,6 +357,7 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
 	if (obj_added==true)
 	{
 	KDL::Frame obj_frame = s_F_ee_*ee_F_obj_;
+	std::cout<<"s_F_f"<<obj_frame<<std::endl;
     obj_->setFrame(obj_frame);
     KDL::Vector s_p_ee_obj = obj_->getFrame().p - s_F_ee_.p;
     s_V_obj_ = s_V_ee_.RefPoint(s_p_ee_obj);
@@ -365,7 +379,10 @@ void QUADRUPED::update (Eigen::Matrix4d &eigenWorld_H_base, Eigen::Matrix<double
         // KDL::changeBase(J, obj_->getFrame().M.Inverse(), J);
         Eigen::Matrix<double,3,24> J_ci = obj_->getContacts().at(0).getB().transpose()*J.data;
         b_J_c_.at(i) = J_ci*toEigen(T).inverse();
+		std::cout<<"contact"<<contacts_[i].getFrame().Inverse()<<std::endl;
+		std::cout<<"contact"<<J_ci<<std::endl;
     }
+	std::cout<<"contact B"<<obj_->getContacts().at(0).getB()<<std::endl;
 	
 }
 
@@ -1454,6 +1471,7 @@ Eigen::MatrixXd QUADRUPED::qpproblem( Eigen::Matrix<double,6,1> &Wcom_des, Eigen
 	alglib::minqpsetquadraticterm( state,Q);
     alglib::minqpsetlinearterm(state,c);
 	
+	std::cout << "y1" << vdotswdes<< std::endl;
  
    //Equality constraints
    Eigen::Matrix<double,24, 52> eigenA= Eigen::Matrix<double,24, 52>::Zero();
@@ -1483,6 +1501,8 @@ Eigen::MatrixXd QUADRUPED::qpproblem( Eigen::Matrix<double,6,1> &Wcom_des, Eigen
 
     eigenb.block(18,0,6,1)=-Jdqdobj+obj_->getMassMatrix().inverse()*(-C_ + N_ + toEigenKDL(F_b));
 
+    std::cout<<"eigenb"<<eigenb.block(18,0,6,1)<<std::endl;
+	std::cout<<"eigenA"<<eigenA.block(18,0,6,52)<<std::endl;
     
 
 	//Inequality Constraints
@@ -1649,6 +1669,7 @@ Eigen::MatrixXd QUADRUPED::qpproblem( Eigen::Matrix<double,6,1> &Wcom_des, Eigen
 	for ( int j = 0; j < x_eigen.size(); j++ )
              x_eigen(j)=x_(j);
 
+     std::cout<<"solution "<<x_eigen<<std::endl;
     
      Eigen::Matrix<double,6,1> Wobt=Jot*x_eigen.block(24,0,12,1);
 
@@ -1661,7 +1682,10 @@ Eigen::MatrixXd QUADRUPED::qpproblem( Eigen::Matrix<double,6,1> &Wcom_des, Eigen
     Eigen::Matrix<double,12,1> Fc;
     Fc= F_c_hat*x_eigen.block(36,0,16,1);
 
+      std::cout<<"Fc"<<Fc<<std::endl;
     Eigen::Matrix<double,6,1> Fb_des=G_*F_c_hat*x_eigen.block(36,0,16,1);
+	std::cout<<"Fb"<<Fb_des<<std::endl;
+	std::cout<<"Fb"<<toEigenKDL(F_b)<<std::endl;
 	Eigen::Matrix<double,18,1> tau= Eigen::Matrix<double,18,1>::Zero();
 	tau=toEigen(MassMatrixCOM).block(6,6,18,18)*x_eigen.block(6,0,18,1)+eigenBiascom-Jstj.transpose()*x_eigen.block(24,0,12,1)+Jobj_b.block(0,6,6,18).transpose()*Fb_des;//-Jc.block(0,6,12,18).transpose()*Fc;//;
 	return tau;
@@ -1707,6 +1731,7 @@ Eigen::VectorXd QUADRUPED::qpproblembr( Eigen::Matrix<double,6,1> &Wcom_des, Eig
 
       ////////////////////////////////////
    Eigen::Matrix<double, 6,12> G_=obj_->getGraspMatrix();
+    std::cout<<"grasp"<<G_<<std::endl;
     // compute object wrench in body frame
     KDL::Wrench F_b = obj_->computeID();
 
@@ -1831,6 +1856,7 @@ Eigen::VectorXd QUADRUPED::qpproblembr( Eigen::Matrix<double,6,1> &Wcom_des, Eig
 	
 	
 
+	 std::cout<<"prova1"<<std::endl;
 
 	//Equality constraints
 	Eigen::Matrix<double,18, 52> eigenA= Eigen::Matrix<double,18, 52>::Zero();
@@ -1849,6 +1875,7 @@ Eigen::VectorXd QUADRUPED::qpproblembr( Eigen::Matrix<double,6,1> &Wcom_des, Eig
     //eigenA.block(12,36,6,16) = obj_->getMassMatrix().inverse()*G_*F_c_hat;
 
 	//std::cout<<"eigenA"<<eigenA<<std::endl;
+std::cout<<"prova2"<<std::endl;
     // Known term
     Eigen::Matrix<double,18, 1> eigenb= Eigen::Matrix<double,18,1>::Zero();
 
@@ -2055,6 +2082,7 @@ Eigen::VectorXd QUADRUPED::qpproblembr( Eigen::Matrix<double,6,1> &Wcom_des, Eig
              x_eigen(j)=x_(j);
 
 
+    std::cout<<"solution"<<x_eigen<<std::endl;
 
 	
 	std::vector<Eigen::Matrix<double,3,24>> Jci = b_J_c_;
@@ -2064,11 +2092,18 @@ Eigen::VectorXd QUADRUPED::qpproblembr( Eigen::Matrix<double,6,1> &Wcom_des, Eig
 
     Eigen::Matrix<double,12,1> Fc;
     Fc= F_c_hat*x_eigen.block(36,0,16,1);
+        std::cout<<"Fc"<<Fc<<std::endl;
 	Eigen::VectorXd tau= Eigen::VectorXd::Zero(18);
 	//Eigen::Matrix<double,6,1> Fb_des=obj_->getMassMatrix()*Jobj_b*x_eigen.block(0,0,24,1)+obj_->getMassMatrix()*s_J_dot_obj_.data*toEigen(dq)+C_-N_;
 	Eigen::Matrix<double,6,1> Fb_des=G_*F_c_hat*x_eigen.block(36,0,16,1);
+	std::cout<<"Fb"<<Fb_des<<std::endl;
+	std::cout<<"Fb"<<toEigenKDL(F_b)<<std::endl;
 	tau=toEigen(MassMatrixCOM).block(6,6,18,18)*x_eigen.block(6,0,18,1)+eigenBiascom-Jstj.transpose()*x_eigen.block(24,0,6,1)+Jobj_b.block(0,6,6,18).transpose()*Fb_des;//-Jc.block(0,6,12,18).transpose()*Fc;//+Jobj_b.block(0,6,6,18).transpose()*Fb_des;//-Jobj_b.block(0,6,6,18).transpose()*Fb_des;
 
+		std::cout<<"acc"<<toEigen(JacCOM_lin).block(swl1,0,3,24)*x_eigen.block(0,0,24,1)+toEigen(JdqdCOM_lin).block(swl1,0,3,1)<<std::endl;
+				std::cout<<"acc"<<toEigen(JacCOM_lin).block(swl2,0,3,24)*x_eigen.block(0,0,24,1)+toEigen(JdqdCOM_lin).block(swl2,0,3,1)<<std::endl;
+	std::cout<<"vel"<<toEigen(JacCOM_lin).block(swl1,0,3,24)*toEigen(dq)<<std::endl;
+	std::cout<<"wobt"<<Jst.transpose()*x_eigen.block(24,0,6,1)<<std::endl;
 	return tau;
 
 }
@@ -2114,6 +2149,7 @@ Eigen::VectorXd QUADRUPED::qpproblemol( Eigen::Matrix<double,6,1> &Wcom_des, Eig
 
       ////////////////////////////////////
    Eigen::Matrix<double, 6,12> G_=obj_->getGraspMatrix();
+    std::cout<<"grasp"<<G_<<std::endl;
     // compute object wrench in body frame
     KDL::Wrench F_b = obj_->computeID();
 
@@ -2418,14 +2454,19 @@ Eigen::VectorXd QUADRUPED::qpproblemol( Eigen::Matrix<double,6,1> &Wcom_des, Eig
              x_eigen(j)=x_(j);
 
 
+    std::cout<<"solution"<<x_eigen<<std::endl;
 
     Eigen::Matrix<double,12,1> Fc;
     Fc= F_c_hat*x_eigen.block(36,0,16,1);
+        std::cout<<"Fc"<<Fc<<std::endl;
 	
 	//Eigen::Matrix<double,6,1> Fb_des=obj_->getMassMatrix()*Jobj_b*x_eigen.block(0,0,24,1)+obj_->getMassMatrix()*s_J_dot_obj_.data*toEigen(dq)+C_-N_;
 	Eigen::Matrix<double,6,1> Fb_des=G_*F_c_hat*x_eigen.block(36,0,16,1);
+	std::cout<<"Fb"<<Fb_des<<std::endl;
+	std::cout<<"Fb"<<toEigenKDL(F_b)<<std::endl;
 	Eigen::VectorXd tau= Eigen::VectorXd::Zero(18);
 	tau=toEigen(MassMatrixCOM).block(6,6,18,18)*x_eigen.block(6,0,18,1)+eigenBiascom-Jstj.transpose()*x_eigen.block(24,0,9,1)+Jobj_b.block(0,6,6,18).transpose()*Fb_des;
+	std::cout<<"acc"<<toEigen(JacCOM_lin).block(swl1,0,3,24)*x_eigen.block(0,0,24,1)+toEigen(JdqdCOM_lin).block(swl1,0,3,1)<<std::endl;
 	return tau;
 
 }
